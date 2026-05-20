@@ -1,2 +1,25 @@
 {% extends "base.html" %}
-{% block content %}<h2>Logs</h2>{% endblock %}
+
+{% block content %}
+<div class="toolbar">
+    <h2 style="font-weight: 600;">Nhật ký Hoạt động Hệ thống</h2>
+    <div style="display: flex; gap: 12px; align-items: center;">
+        <select id="filter-log-level" class="form-control" style="width: 150px; padding: 8px 12px;">
+            <option value="all">Tất cả cấp độ</option>
+            <option value="INFO">INFO</option>
+            <option value="WARN">WARNING</option>
+            <option value="ERROR">ERROR</option>
+        </select>
+        <button class="btn btn-ghost" id="btn-refresh-logs">
+            <i data-lucide="refresh-cw"></i> Refresh
+        </button>
+        <button class="btn btn-primary" id="btn-clear-logs" style="background: var(--danger); box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);">
+            <i data-lucide="trash"></i> Xóa sạch nhật ký
+        </button>
+    </div>
+</div>
+
+<div class="logs-viewer" id="logs-viewer-box">
+    <!-- Log rows will be loaded dynamically by JS -->
+</div>
+{% endblock %}

@@ -171,6 +171,82 @@ class Database:
         conn.close()
         return True
 
+    # --- ACCOUNTS ---
+    def get_all_accounts(self):
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        cursor.execute('SELECT * FROM accounts ORDER BY created_at DESC')
+        rows = cursor.fetchall()
+        conn.close()
+        return [dict(row) for row in rows]
+
+    def add_account(self, platform, username, password, email=None, phone=None, cookies=None, token=None, assigned_device_serial=None, notes=None, status='pending'):
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            '''INSERT INTO accounts (platform, username, password, email, phone, cookies, token, assigned_device_serial, notes, status)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+            (platform, username, password, email, phone, cookies, token, assigned_device_serial, notes, status)
+        )
+        conn.commit()
+        conn.close()
+        return True
+
+    def delete_account(self, account_id):
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        cursor.execute('DELETE FROM accounts WHERE id = ?', (account_id,))
+        conn.commit()
+        conn.close()
+        return True
+
+    def import_accounts(self, text_data, platform='facebook'):
+        """Import accounts from text (one per line)
+           Formats supported:
+           - username|password
+           - username|password|cookie|token
+           - username|password|email|phone|cookie|token
+        """
+        lines = text_data.strip().splitlines()
+        added = 0
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+                
+            parts = [p.strip() for p in line.split('|')]
+            if len(parts) >= 2:
+                username = parts[0]
+                password = parts[1]
+                email = None
+                phone = None
+                cookies = None
+                token = None
+                
+                if len(parts) == 4:
+                    cookies = parts[2]
+                    token = parts[3]
+                elif len(parts) >= 5:
+                    email = parts[2]
+                    phone = parts[3]
+                    cookies = parts[4]
+                    if len(parts) >= 6:
+                        token = parts[5]
+                
+                cursor.execute(
+                    '''INSERT INTO accounts (platform, username, password, email, phone, cookies, token, status)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+                    (platform, username, password, email, phone, cookies, token, 'pending')
+                )
+                added += 1
+                
+        conn.commit()
+        conn.close()
+        return added
+
     # --- LOGS ---
     def add_log(self, level, source, message, device_serial=None, task_id=None):
         conn = self.get_connection()

@@ -109,3 +109,20 @@ class ProxyManager:
         conn.close()
         
         return status == 'alive'
+
+    def check_all_proxies(self):
+        """Check all proxies concurrently using ThreadPoolExecutor"""
+        proxies = self.get_all_proxies()
+        import concurrent.futures
+        with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
+            executor.map(lambda p: self.check_proxy(p['id']), proxies)
+        return True
+
+    def clear_dead_proxies(self):
+        """Delete all proxies marked as dead"""
+        conn = self.db.get_connection()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM proxies WHERE status = 'dead'")
+        conn.commit()
+        conn.close()
+        return True

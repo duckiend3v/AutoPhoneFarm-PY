@@ -6,6 +6,8 @@ from config import Config
 
 logger = logging.getLogger(__name__)
 
+import concurrent.futures
+
 class DeviceManager:
     def __init__(self, adb_manager, database):
         self.adb = adb_manager
@@ -13,6 +15,9 @@ class DeviceManager:
         self.is_scanning = False
         self.scan_thread = None
         self.scan_interval = 5  # seconds
+        self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=30)
+        self.active_queries = set()
+        self.socketio = None # Will be set by app.py
 
     def start_scanner(self):
         """Start background thread to scan devices"""
@@ -40,11 +45,11 @@ class DeviceManager:
             time.sleep(self.scan_interval)
 
     def scan_devices(self):
-        """Scan connected devices and update database"""
+        """Scan connected devices and update database quickly, then query details in background"""
         connected_devices = self.adb.get_devices()
         connected_serials = [d['serial'] for d in connected_devices]
         
-        # Mark missing devices as offline
+        # Mark missing devices as offline in database
         db_devices = self.db.get_all_devices()
         for db_dev in db_devices:
             if db_dev['serial'] not in connected_serials and db_dev['status'] != 'offline':
@@ -53,28 +58,66 @@ class DeviceManager:
                     'status': 'offline'
                 })
         
-        # Add or update connected devices
+        # Add or update connected devices instantly
         for d in connected_devices:
             serial = d['serial']
-            
-            # If it's a newly connected device, get full info
+            status = d['status']
             existing = self.db.get_device(serial)
-            if not existing or existing['status'] == 'offline':
-                logger.info(f"New device detected: {serial}")
-                info = self.adb.get_device_info(serial)
-                device_data = {
-                    'serial': serial,
-                    'status': d['status'],
-                    'name': f"Device {serial[-4:]}", # Default name
-                }
-                device_data.update(info)
-                self.db.add_or_update_device(device_data)
-            else:
-                # Just update status and last_seen
+            
+            # Immediately update status to 'online' in DB to reflect on frontend
+            if not existing:
+                # Newly detected device: save stub first and trigger background detail fetch
                 self.db.add_or_update_device({
                     'serial': serial,
-                    'status': d['status']
+                    'status': status,
+                    'name': f"Device {serial[-4:]}", # Default name
+                    'model': 'Unknown',
+                    'android_version': 'Unknown',
+                    'battery': 0,
+                    'ip_address': 'Unknown'
                 })
+                self.executor.submit(self._async_fetch_device_info, serial, status)
+            elif existing['status'] == 'offline' or existing['model'] == 'Unknown' or not existing['ip_address'] or existing['ip_address'] == 'Unknown':
+                # Device was offline or has missing details: update status and trigger detail query
+                self.db.add_or_update_device({
+                    'serial': serial,
+                    'status': status
+                })
+                self.executor.submit(self._async_fetch_device_info, serial, status)
+            else:
+                # Already active, just update status/last_seen to keep it fresh
+                self.db.add_or_update_device({
+                    'serial': serial,
+                    'status': status
+                })
+                
+    def _async_fetch_device_info(self, serial, status):
+        """Background thread worker to retrieve detailed device information via ADB"""
+        if serial in self.active_queries:
+            return
+            
+        self.active_queries.add(serial)
+        try:
+            logger.info(f"Querying details for device in background: {serial}")
+            info = self.adb.get_device_info(serial)
+            
+            # Update DB with full details
+            device_data = {
+                'serial': serial,
+                'status': status
+            }
+            device_data.update(info)
+            self.db.add_or_update_device(device_data)
+            
+            # Push WebSocket notification to trigger frontend update if SocketIO is set
+            if self.socketio:
+                self.socketio.emit('device_updated', {'serial': serial, 'info': info})
+                
+            logger.info(f"Successfully loaded details for device: {serial}")
+        except Exception as e:
+            logger.error(f"Error fetching details for {serial}: {e}")
+        finally:
+            self.active_queries.remove(serial)
                 
     def get_device_screenshot(self, serial):
         """Take screenshot and return the path"""
@@ -87,10 +130,6 @@ class DeviceManager:
         return None
         
     def refresh_device_info(self, serial):
-        """Force refresh battery, IP, etc."""
-        info = self.adb.get_device_info(serial)
-        if info:
-            info['serial'] = serial
-            self.db.add_or_update_device(info)
-            return True
-        return False
+        """Force refresh battery, IP, etc. in a background thread"""
+        self.executor.submit(self._async_fetch_device_info, serial, 'online')
+        return True

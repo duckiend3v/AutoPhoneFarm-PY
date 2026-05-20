@@ -1,5 +1,99 @@
 {% extends "base.html" %}
+
 {% block content %}
-<h2>Task Scheduler</h2>
-<p style="color: var(--text-secondary);">Trang tạo và lập lịch chạy script cho thiết bị.</p>
+<div class="toolbar">
+    <h2 style="font-weight: 600;">Danh sách Tác vụ Tự động hóa</h2>
+    <button class="btn btn-primary" onclick="openModal('modal-create-task')">
+        <i data-lucide="plus-circle"></i> + Tạo tác vụ mới
+    </button>
+</div>
+
+<div class="table-container">
+    <table class="table" id="tasks-table">
+        <thead>
+            <tr>
+                <th style="width: 60px;">ID</th>
+                <th>Tên Tác vụ</th>
+                <th>Loại Tác vụ</th>
+                <th>Thiết bị mục tiêu</th>
+                <th style="width: 200px;">Tiến trình</th>
+                <th>Trạng thái</th>
+                <th>Thời gian tạo</th>
+                <th style="text-align: right; width: 180px;">Thao tác</th>
+            </tr>
+        </thead>
+        <tbody id="tasks-list">
+            <!-- Dữ liệu tác vụ tải động từ JS -->
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal Tạo Tác Vụ Mới -->
+<div class="modal" id="modal-create-task">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Tạo Tác vụ tự động hóa mới</h3>
+            <button class="modal-close" onclick="closeModal('modal-create-task')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label">Tên tác vụ</label>
+                <input type="text" id="task-name" class="form-control" placeholder="Ví dụ: Cài đặt ứng dụng Facebook hoặc Tắt ứng dụng">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Loại tác vụ</label>
+                <select id="task-type" class="form-control" onchange="toggleTaskParams()">
+                    <option value="REBOOT">Khởi động lại thiết bị (Reboot)</option>
+                    <option value="INSTALL_APP">Cài đặt tệp ứng dụng APK (Install APK)</option>
+                    <option value="SHELL_CMD">Chạy lệnh Shell ADB đồng thời (Shell command)</option>
+                    <option value="RUN_SCRIPT">Chạy Kịch bản Nuôi Nick Facebook chuyên sâu</option>
+                </select>
+            </div>
+            
+            <!-- Tham số Cài APK -->
+            <div class="form-group task-param-section" id="section-install-app" style="display: none;">
+                <label class="form-label">Đường dẫn tệp APK trên máy tính</label>
+                <input type="text" id="task-apk-path" class="form-control" placeholder="C:\Users\Kien\Desktop\facebook.apk">
+            </div>
+            
+            <!-- Tham số Gửi Shell -->
+            <div class="form-group task-param-section" id="section-shell-cmd" style="display: none;">
+                <label class="form-label">Câu lệnh Shell</label>
+                <input type="text" id="task-shell-cmd" class="form-control" placeholder="input keyevent 3 hoặc am force-stop com.facebook.katana">
+            </div>
+            
+            <!-- Tham số Chạy Kịch Bản Nuôi Facebook -->
+            <div class="form-group task-param-section" id="section-run-script" style="display: none;">
+                <label class="form-label">Kịch bản Nuôi Nick tự động</label>
+                <select id="task-script-template" class="form-control">
+                    <option value="fb_feed_surf">Mô phỏng lướt bảng tin (Feed) & Thả tim ngẫu nhiên</option>
+                    <option value="fb_watch_video">Xem Facebook Watch & Chia sẻ bài viết</option>
+                    <option value="fb_add_friends">Tìm kiếm và Kết bạn ngẫu nhiên theo gợi ý</option>
+                    <option value="fb_login_check">Đăng nhập tài khoản & Kiểm tra Checkpoint</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Chọn thiết bị áp dụng</label>
+                <div style="max-height: 150px; overflow-y: auto; border: 1px solid var(--panel-border); padding: 12px; border-radius: 8px; background: rgba(0,0,0,0.2);">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; border-bottom: 1px solid var(--panel-border); padding-bottom: 6px;">
+                        <label class="custom-checkbox">
+                            <input type="checkbox" id="task-select-all-devices">
+                            <span class="checkbox-checkmark"></span>
+                        </label>
+                        <span>Chọn tất cả các thiết bị đang trực tuyến (online)</span>
+                    </div>
+                    <div id="task-devices-checkboxes">
+                        <!-- Danh sách checkbox thiết bị tải từ JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="closeModal('modal-create-task')">Hủy</button>
+            <button class="btn btn-primary" id="btn-submit-task">Tạo & Khởi chạy</button>
+        </div>
+    </div>
+</div>
 {% endblock %}

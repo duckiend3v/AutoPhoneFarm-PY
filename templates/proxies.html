@@ -1,2 +1,67 @@
 {% extends "base.html" %}
-{% block content %}<h2>Proxies</h2>{% endblock %}
+
+{% block content %}
+<div class="toolbar">
+    <h2 style="font-weight: 600;">Quản lý danh sách Proxy IP</h2>
+    <div style="display: flex; gap: 12px;">
+        <button class="btn btn-ghost" id="btn-check-all-proxies">
+            <i data-lucide="check-square"></i> Kiểm tra hoạt động (Check All)
+        </button>
+        <button class="btn btn-ghost" id="btn-clear-dead-proxies" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.3);">
+            <i data-lucide="trash-2"></i> Xóa Proxy hỏng (Clear Dead)
+        </button>
+        <button class="btn btn-primary" onclick="openModal('modal-import-proxies')">
+            <i data-lucide="upload"></i> + Nhập danh sách Proxy
+        </button>
+    </div>
+</div>
+
+<div class="table-container">
+    <table class="table" id="proxies-table">
+        <thead>
+            <tr>
+                <th style="width: 60px;">ID</th>
+                <th>Loại Proxy</th>
+                <th>Địa chỉ IP:Port</th>
+                <th>Tài khoản</th>
+                <th>Mật khẩu</th>
+                <th>Quốc gia</th>
+                <th>Lần kiểm tra cuối</th>
+                <th>Trạng thái</th>
+                <th style="text-align: right; width: 120px;">Thao tác</th>
+            </tr>
+        </thead>
+        <tbody id="proxies-list">
+            <!-- Danh sách proxy tải động từ JS -->
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal Nhập danh sách Proxy -->
+<div class="modal" id="modal-import-proxies">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Nhập Proxy hàng loạt</h3>
+            <button class="modal-close" onclick="closeModal('modal-import-proxies')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label">Loại Proxy mặc định</label>
+                <select id="import-proxy-type" class="form-control">
+                    <option value="http">HTTP</option>
+                    <option value="socks5">SOCKS5</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Dán danh sách Proxy (Mỗi dòng một Proxy)</label>
+                <textarea id="import-proxies-text" class="form-control" rows="8" style="font-family: monospace; font-size: 12px;" placeholder="Định dạng hỗ trợ:&#10;host:port&#10;host:port:username:password"></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="closeModal('modal-import-proxies')">Hủy</button>
+            <button class="btn btn-primary" id="btn-submit-import-proxies">Nhập danh sách</button>
+        </div>
+    </div>
+</div>
+{% endblock %}

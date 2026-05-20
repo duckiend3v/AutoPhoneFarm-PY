@@ -1,2 +1,126 @@
 {% extends "base.html" %}
-{% block content %}<h2>Accounts</h2>{% endblock %}
+
+{% block content %}
+<div class="toolbar">
+    <h2 style="font-weight: 600;">Cơ sở dữ liệu Tài khoản</h2>
+    <div style="display: flex; gap: 12px;">
+        <button class="btn btn-ghost" onclick="openModal('modal-import-accounts')">
+            <i data-lucide="upload"></i> Nhập hàng loạt tài khoản
+        </button>
+        <button class="btn btn-primary" onclick="openModal('modal-create-account')">
+            <i data-lucide="plus-circle"></i> + Thêm tài khoản lẻ
+        </button>
+    </div>
+</div>
+
+<div class="table-container">
+    <table class="table" id="accounts-table">
+        <thead>
+            <tr>
+                <th style="width: 60px;">ID</th>
+                <th>Nền tảng</th>
+                <th>Tên tài khoản (UID)</th>
+                <th>Mật khẩu</th>
+                <th>Email khôi phục</th>
+                <th>Số điện thoại</th>
+                <th>Cookies / Token</th>
+                <th>Thiết bị đang gán</th>
+                <th>Trạng thái</th>
+                <th style="text-align: right; width: 120px;">Thao tác</th>
+            </tr>
+        </thead>
+        <tbody id="accounts-list">
+            <!-- Danh sách tài khoản tải động từ JS -->
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal Nhập hàng loạt tài khoản -->
+<div class="modal" id="modal-import-accounts">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Nhập tài khoản hàng loạt</h3>
+            <button class="modal-close" onclick="closeModal('modal-import-accounts')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label">Chọn nền tảng</label>
+                <select id="import-platform" class="form-control">
+                    <option value="facebook">Facebook</option>
+                    <option value="tiktok">TikTok</option>
+                    <option value="gmail">Gmail</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Dán danh sách tài khoản (Mỗi dòng một tài khoản)</label>
+                <textarea id="import-accounts-text" class="form-control" rows="8" style="font-family: monospace; font-size: 12px;" placeholder="Định dạng hỗ trợ:&#10;username|password&#10;username|password|cookie|token&#10;username|password|email|phone|cookie|token"></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="closeModal('modal-import-accounts')">Hủy</button>
+            <button class="btn btn-primary" id="btn-submit-import-accounts">Nhập danh sách</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Thêm tài khoản lẻ -->
+<div class="modal" id="modal-create-account">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Thêm tài khoản lẻ mới</h3>
+            <button class="modal-close" onclick="closeModal('modal-create-account')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label">Nền tảng</label>
+                <select id="acc-platform" class="form-control">
+                    <option value="facebook">Facebook</option>
+                    <option value="tiktok">TikTok</option>
+                    <option value="gmail">Gmail</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Tên tài khoản / UID</label>
+                <input type="text" id="acc-username" class="form-control" placeholder="100095817282...">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Mật khẩu</label>
+                <input type="text" id="acc-password" class="form-control" placeholder="Nhập mật khẩu...">
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div class="form-group">
+                    <label class="form-label">Email khôi phục</label>
+                    <input type="email" id="acc-email" class="form-control" placeholder="example@mail.com">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Số điện thoại</label>
+                    <input type="text" id="acc-phone" class="form-control" placeholder="+84...">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Cookies</label>
+                <input type="text" id="acc-cookies" class="form-control" placeholder="c_user=1000...; xs=...">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Access Token</label>
+                <input type="text" id="acc-token" class="form-control" placeholder="EAAA...">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Ghi chú</label>
+                <input type="text" id="acc-notes" class="form-control" placeholder="Nhập ghi chú (nếu có)...">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="closeModal('modal-create-account')">Hủy</button>
+            <button class="btn btn-primary" id="btn-submit-create-account">Lưu tài khoản</button>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,2 +1,83 @@
 {% extends "base.html" %}
-{% block content %}<h2>Settings</h2>{% endblock %}
+
+{% block content %}
+<div class="glass-panel" style="padding: 30px; max-width: 800px;">
+    
+    <div class="settings-section">
+        <h3><i data-lucide="terminal" style="width: 20px; vertical-align: bottom; margin-right: 8px;"></i> ADB Configuration</h3>
+        <div class="form-group">
+            <label class="form-label">ADB Executable Path</label>
+            <input type="text" class="form-control" id="adb-path" value="adb" placeholder="e.g., C:\platform-tools\adb.exe">
+            <small style="color: var(--text-secondary); margin-top: 6px; display: block;">Leave as "adb" if it's already added to system environment variables.</small>
+        </div>
+        <div class="form-group" style="display: flex; gap: 16px;">
+            <button class="btn btn-primary" onclick="saveSettings()">Save ADB Settings</button>
+            <button class="btn btn-ghost" onclick="testADB()"><i data-lucide="check-circle"></i> Test Connection</button>
+        </div>
+    </div>
+
+    <div class="settings-section">
+        <h3><i data-lucide="refresh-cw" style="width: 20px; vertical-align: bottom; margin-right: 8px;"></i> Automation Settings</h3>
+        <div class="form-group">
+            <label class="form-label">Auto-scan Interval (seconds)</label>
+            <input type="number" class="form-control" id="scan-interval" value="5" min="1">
+        </div>
+    </div>
+
+    <div class="settings-section">
+        <h3><i data-lucide="database" style="width: 20px; vertical-align: bottom; margin-right: 8px;"></i> Database Management</h3>
+        <div style="display: flex; gap: 16px; margin-bottom: 16px;">
+            <button class="btn btn-ghost" onclick="actionDatabase('backup')"><i data-lucide="download"></i> Backup Database</button>
+            <button class="btn btn-ghost" onclick="actionDatabase('clear_logs')"><i data-lucide="trash-2"></i> Clear All Logs</button>
+        </div>
+        <p style="color: var(--warning); font-size: 14px;">Warning: Clearing logs cannot be undone.</p>
+    </div>
+
+</div>
+
+<script>
+    // These functions can be moved to app.js later if it grows too big
+    function saveSettings() {
+        const path = document.getElementById('adb-path').value;
+        const btn = event.currentTarget;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = 'Saving...';
+        
+        fetch('/api/settings/adb', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ adb_path: path })
+        }).then(r => r.json()).then(data => {
+            btn.innerHTML = data.success ? '<span style="color: var(--success)">Saved!</span>' : 'Error';
+            setTimeout(() => { btn.innerHTML = originalText; }, 2000);
+        });
+    }
+
+    function testADB() {
+        const path = document.getElementById('adb-path').value;
+        fetch('/api/settings/adb/test', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ adb_path: path })
+        }).then(r => r.json()).then(data => {
+            if(data.success) {
+                alert(`ADB Connection Successful!\nVersion: ${data.version}`);
+            } else {
+                alert(`ADB Connection Failed:\n${data.error}`);
+            }
+        });
+    }
+
+    function actionDatabase(action) {
+        if (action === 'clear_logs' && !confirm('Are you sure you want to delete all logs?')) {
+            return;
+        }
+        
+        fetch(`/api/database/${action}`, { method: 'POST' })
+            .then(r => r.json())
+            .then(data => {
+                alert(data.message || (data.success ? 'Success' : 'Failed'));
+            });
+    }
+</script>
+{% endblock %}

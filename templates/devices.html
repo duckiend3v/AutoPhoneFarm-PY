@@ -1,5 +1,145 @@
 {% extends "base.html" %}
+
 {% block content %}
-<h2>Device Management</h2>
-<p style="color: var(--text-secondary);">Quản lý thiết bị chuyên sâu sẽ được thêm vào đây.</p>
+<div class="toolbar">
+    <div class="toolbar-actions">
+        <label class="custom-checkbox" style="margin-right: 8px;">
+            <input type="checkbox" id="select-all-devices">
+            <span class="checkbox-checkmark"></span>
+        </label>
+        <span style="font-size: 14px; color: var(--text-secondary); margin-right: 16px;">Chọn tất cả (<span id="selected-count">0</span>)</span>
+        
+        <button class="btn btn-ghost" id="btn-batch-reboot" disabled>
+            <i data-lucide="power"></i> Reboot
+        </button>
+        <button class="btn btn-ghost" id="btn-batch-apk" disabled>
+            <i data-lucide="download"></i> Cài APK
+        </button>
+        <button class="btn btn-ghost" id="btn-batch-shell" disabled>
+            <i data-lucide="terminal"></i> Gửi lệnh Shell
+        </button>
+    </div>
+    
+    <div style="display: flex; gap: 12px;">
+        <select id="filter-status" class="form-control" style="width: 150px; padding: 8px 12px;">
+            <option value="all">Tất cả trạng thái</option>
+            <option value="online">Online</option>
+            <option value="busy">Đang bận</option>
+            <option value="offline">Offline</option>
+        </select>
+    </div>
+</div>
+
+<div class="device-grid" id="devices-list">
+    <!-- Load danh sách thiết bị bằng JS ở đây -->
+</div>
+
+<!-- Modal Gửi Lệnh Shell hàng loạt -->
+<div class="modal" id="modal-batch-shell">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Gửi lệnh Shell đồng thời</h3>
+            <button class="modal-close" onclick="closeModal('modal-batch-shell')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p style="margin-bottom: 12px; font-size: 13px; color: var(--text-secondary);">Lệnh sẽ được gửi tới các thiết bị đã chọn.</p>
+            <div class="form-group">
+                <label class="form-label">Lệnh Shell ADB (Ví dụ: input keyevent 3 hoặc am force-stop com.facebook.katana)</label>
+                <input type="text" id="batch-shell-cmd" class="form-control" placeholder="Nhập lệnh adb shell...">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="closeModal('modal-batch-shell')">Hủy</button>
+            <button class="btn btn-primary" id="btn-submit-batch-shell">Thực thi</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Cài APK hàng loạt -->
+<div class="modal" id="modal-batch-apk">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Cài đặt tệp APK lên thiết bị</h3>
+            <button class="modal-close" onclick="closeModal('modal-batch-apk')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label">Đường dẫn tệp APK trên máy tính (Local APK Path)</label>
+                <input type="text" id="batch-apk-path" class="form-control" placeholder="C:\Users\Kien\Desktop\facebook.apk">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="closeModal('modal-batch-apk')">Hủy</button>
+            <button class="btn btn-primary" id="btn-submit-batch-apk">Cài đặt</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Xem ảnh màn hình & Chi tiết thiết bị -->
+<div class="modal" id="modal-device-detail">
+    <div class="modal-content" style="max-width: 800px;">
+        <div class="modal-header">
+            <h3 class="modal-title">Chi tiết Thiết bị: <span id="detail-device-title"></span></h3>
+            <button class="modal-close" onclick="closeModal('modal-device-detail')">&times;</button>
+        </div>
+        <div class="modal-body" style="display: flex; gap: 24px; flex-wrap: wrap;">
+            <!-- Cột bên trái: Ảnh màn hình -->
+            <div style="flex: 1; min-width: 250px; display: flex; flex-direction: column; align-items: center;">
+                <div id="detail-screen-wrapper" style="width: 100%; height: 350px; background: #000; border-radius: 8px; border: 1px solid var(--panel-border); overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                    <i data-lucide="smartphone" style="width: 64px; height: 64px; opacity: 0.2; color: #fff;" id="screen-placeholder"></i>
+                    <img id="detail-screen-img" style="width: 100%; height: 100%; object-fit: contain; display: none;">
+                </div>
+                <button class="btn btn-ghost" id="btn-refresh-screen" style="margin-top: 12px; width: 100%;">
+                    <i data-lucide="camera"></i> Chụp ảnh màn hình mới
+                </button>
+            </div>
+            
+            <!-- Cột bên phải: Thông số chi tiết & Gán nhanh -->
+            <div style="flex: 1.2; min-width: 280px;">
+                <div style="margin-bottom: 20px;">
+                    <h4 style="margin-bottom: 12px; font-weight: 600;">Thông số kỹ thuật</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 13px; color: var(--text-secondary);">
+                        <div>Serial: <b id="detail-serial" style="color: var(--text-primary);"></b></div>
+                        <div>Hệ điều hành: <b id="detail-android" style="color: var(--text-primary);"></b></div>
+                        <div>Pin: <b id="detail-battery" style="color: var(--text-primary);"></b></div>
+                        <div>IP Address: <b id="detail-ip" style="color: var(--text-primary);"></b></div>
+                        <div>Proxy đang gán: <span id="detail-proxy" style="color: var(--accent-color);">Chưa gán</span></div>
+                        <div>Tài khoản gán: <span id="detail-account" style="color: var(--success);">Chưa gán</span></div>
+                    </div>
+                </div>
+                
+                <hr style="border: none; border-top: 1px solid var(--panel-border); margin: 16px 0;">
+                
+                <div style="margin-bottom: 20px;">
+                    <h4 style="margin-bottom: 12px; font-weight: 600;">Gửi nhanh lệnh Shell</h4>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="detail-shell-cmd" class="form-control" style="padding: 8px;" placeholder="Nhập lệnh adb shell...">
+                        <button class="btn btn-primary" id="btn-submit-detail-shell" style="padding: 8px 16px;">Gửi</button>
+                    </div>
+                    <div id="detail-shell-res" style="margin-top: 10px; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 4px; font-family: monospace; font-size: 11px; max-height: 100px; overflow-y: auto; display: none;"></div>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <h4 style="margin-bottom: 12px; font-weight: 600;">Điều khiển trực quan</h4>
+                    <button class="btn btn-primary" style="width: 100%; padding: 10px; font-size: 13px; font-weight: 600; background: linear-gradient(135deg, var(--accent-color), #764ba2); display: flex; align-items: center; justify-content: center; gap: 6px;" onclick="mirrorDevice(document.getElementById('detail-serial').textContent)">
+                        <i data-lucide="tv" style="width: 16px; height: 16px;"></i> Mở màn hình trực tiếp (Live Control)
+                    </button>
+                </div>
+                
+                <div>
+                    <h4 style="margin-bottom: 12px; font-weight: 600;">Mô phỏng thao tác nhanh</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                        <button class="btn btn-ghost" onclick="sendQuickAction('input keyevent 3')"><i data-lucide="home"></i> Home</button>
+                        <button class="btn btn-ghost" onclick="sendQuickAction('input keyevent 4')"><i data-lucide="chevron-left"></i> Back</button>
+                        <button class="btn btn-ghost" onclick="sendQuickAction('am start -a android.intent.action.VIEW -d https://facebook.com')"><i data-lucide="chrome"></i> Mở Facebook</button>
+                        <button class="btn btn-ghost" onclick="sendQuickAction('am force-stop com.facebook.katana')"><i data-lucide="octagon"></i> Tắt Facebook</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-primary" onclick="closeModal('modal-device-detail')">Đóng</button>
+        </div>
+    </div>
+</div>
 {% endblock %}
