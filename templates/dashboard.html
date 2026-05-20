@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="stats-grid">
+    <div class="stat-card glass-panel fade-in" style="animation-delay: 0.1s">
+        <div class="stat-icon"><i data-lucide="smartphone"></i></div>
+        <div>
+            <div class="stat-value" id="stat-total-devices">0</div>
+            <div class="stat-label">Total Devices</div>
+        </div>
+    </div>
+    
+    <div class="stat-card glass-panel fade-in" style="animation-delay: 0.2s">
+        <div class="stat-icon" style="color: var(--success); background: rgba(16, 185, 129, 0.1)"><i data-lucide="wifi"></i></div>
+        <div>
+            <div class="stat-value" id="stat-online-devices">0</div>
+            <div class="stat-label">Online Devices</div>
+        </div>
+    </div>
+    
+    <div class="stat-card glass-panel fade-in" style="animation-delay: 0.3s">
+        <div class="stat-icon" style="color: var(--warning); background: rgba(245, 158, 11, 0.1)"><i data-lucide="play"></i></div>
+        <div>
+            <div class="stat-value">0</div>
+            <div class="stat-label">Running Tasks</div>
+        </div>
+    </div>
+    
+    <div class="stat-card glass-panel fade-in" style="animation-delay: 0.4s">
+        <div class="stat-icon" style="color: #a855f7; background: rgba(168, 85, 247, 0.1)"><i data-lucide="globe"></i></div>
+        <div>
+            <div class="stat-value">0</div>
+            <div class="stat-label">Active Proxies</div>
+        </div>
+    </div>
+</div>
+
+<h2 style="margin-bottom: 20px; font-weight: 600;">Connected Devices</h2>
+<div class="device-grid" id="device-container">
+    <!-- Devices will be loaded here via JS -->
+</div>
+{% endblock %}

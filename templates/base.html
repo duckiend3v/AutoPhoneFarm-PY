@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoPhoneFarm</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Socket.IO -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.1/socket.io.js"></script>
+</head>
+<body>
+    
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <div class="brand">
+            <i data-lucide="smartphone"></i>
+            AutoPhoneFarm
+        </div>
+        <ul class="nav-menu">
+            <li class="nav-item"><a href="/" class="nav-link active" data-page="dashboard"><i data-lucide="layout-dashboard"></i> Dashboard</a></li>
+            <li class="nav-item"><a href="/devices" class="nav-link" data-page="devices"><i data-lucide="smartphone"></i> Devices</a></li>
+            <li class="nav-item"><a href="/tasks" class="nav-link" data-page="tasks"><i data-lucide="list-checks"></i> Tasks</a></li>
+            <li class="nav-item"><a href="/accounts" class="nav-link" data-page="accounts"><i data-lucide="users"></i> Accounts</a></li>
+            <li class="nav-item"><a href="/proxies" class="nav-link" data-page="proxies"><i data-lucide="globe"></i> Proxies</a></li>
+            <li class="nav-item"><a href="/logs" class="nav-link" data-page="logs"><i data-lucide="scroll-text"></i> Logs</a></li>
+            <li class="nav-item"><a href="/settings" class="nav-link" data-page="settings"><i data-lucide="settings"></i> Settings</a></li>
+        </ul>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="top-bar glass-panel">
+            <h1 class="page-title" id="page-title">Dashboard</h1>
+            <div class="top-actions">
+                <div id="clock" style="color: var(--text-secondary); font-weight: 500;"></div>
+                <button class="btn btn-primary" id="btn-scan">
+                    <i data-lucide="refresh-cw"></i> Scan Devices
+                </button>
+            </div>
+        </header>
+
+        <div class="content-wrapper" id="app-content">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <script src="/static/js/app.js"></script>
+    <script>
+        // Initialize icons
+        lucide.createIcons();
+    </script>
+</body>
+</html>
