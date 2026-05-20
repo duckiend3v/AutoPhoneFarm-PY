@@ -1,0 +1,2 @@
+2026-05-20 13:38:23,995 [WARNING] core.adb_manager: ADB not found at adb, falling back to system 'adb'. Error: [WinError 2] The system cannot find the file specified
+2026-05-20 13:38:24,002 [INFO] core.device: Device scanner started
